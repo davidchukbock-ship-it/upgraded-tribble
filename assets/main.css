@@ -343,3 +343,18 @@ section.s{padding:clamp(34px,3.6vw,54px) 0}
   .industries figure:last-child{grid-column:1/-1}
   .industries figure:last-child .photo{aspect-ratio:16/9}
 }
+
+/* icon tiles */
+.ico{display:inline-flex;align-items:center;justify-content:center;flex:none;width:42px;height:42px;border-radius:10px;background:#e9eef6;color:var(--navy)}
+.ico svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.ico.sm{width:34px;height:34px;border-radius:9px}.ico.sm svg{width:18px;height:18px}
+.ico.big{width:56px;height:56px;border-radius:14px;margin-bottom:18px}.ico.big svg{width:28px;height:28px}
+.stubgroup h2.gh{display:flex;align-items:center;gap:12px}
+.itemlist li{display:flex;gap:14px;align-items:flex-start}
+.itemlist li>div{min-width:0}
+.itemlist li a{display:inline-block}
+.itemlist.compact li{align-items:center}
+.itemlist.compact .ico{width:34px;height:34px;border-radius:9px}.itemlist.compact .ico svg{width:18px;height:18px}
+.itemlist li p{margin:4px 0 0}
+.itemlist li:hover .ico{background:var(--navy);color:#fff}
+.market>.ico{margin-bottom:14px}
