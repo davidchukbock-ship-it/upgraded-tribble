@@ -334,3 +334,12 @@ section.s{padding:clamp(34px,3.6vw,54px) 0}
 .photo.portrait.is-empty{background:linear-gradient(180deg,#eef2f7,#dfe6ee)}
 .photo.portrait.is-empty::before{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 125'%3E%3Ccircle cx='50' cy='46' r='17' fill='%23b9c4d3'/%3E%3Cpath d='M16 125c0-24 15-38 34-38s34 14 34 38z' fill='%23b9c4d3'/%3E%3C/svg%3E") center 70%/58% no-repeat}
 .photo.portrait.is-empty::after{content:none}
+@media (max-width:1180px){
+  .partners-row,.inc-row{grid-template-columns:1fr;align-items:start}
+  .partners-row .pbtn{margin-top:4px}
+  .inc-row>div:last-child{border-left:0;padding-left:0}
+}
+@media (max-width:760px){
+  .industries figure:last-child{grid-column:1/-1}
+  .industries figure:last-child .photo{aspect-ratio:16/9}
+}
