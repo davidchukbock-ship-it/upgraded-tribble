@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-Disallow: /data/
-Sitemap: https://site.trsvds.online/sitemap.xml

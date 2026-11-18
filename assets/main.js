@@ -9,9 +9,10 @@
   var b=d.querySelector('.menu'),n=d.getElementById('nav');
   if(b&&n){b.addEventListener('click',function(){var o=n.classList.toggle('open');b.setAttribute('aria-expanded',o?'true':'false');});}
   // request forms: send in the background, fall back to normal POST without JS
-  var loaded=Date.now();
   d.querySelectorAll('form.req').forEach(function(f){
-    var t=f.querySelector('[name=t]');if(t){t.value=String(loaded);}
+    var t=f.querySelector('[name=t]');
+    var getTok=function(){if(!t||!window.fetch){return;}fetch(f.action.replace('send.php','token.php'),{cache:'no-store'}).then(function(r){return r.json();}).then(function(j){if(j&&j.t){t.value=j.t;}}).catch(function(){});};
+    getTok();
     f.addEventListener('submit',function(e){
       if(!window.fetch||!window.FormData){return;}
       e.preventDefault();
@@ -20,7 +21,7 @@
       fetch(f.action,{method:'POST',body:new FormData(f),headers:{'Accept':'application/json'}})
         .then(function(r){return r.json().catch(function(){return {ok:false};});})
         .then(function(j){
-          if(j&&j.ok){d.dispatchEvent(new CustomEvent('gcn:lead'));s.className='status ok';s.textContent=f.dataset.ok;f.reset();if(t){t.value=String(Date.now());}}
+          if(j&&j.ok){d.dispatchEvent(new CustomEvent('gcn:lead'));s.className='status ok';s.textContent=f.dataset.ok;f.reset();getTok();}
           else{s.className='status err';s.textContent=(j&&j.error)||f.dataset.err;}
         })
         .catch(function(){s.className='status err';s.textContent=f.dataset.err;})

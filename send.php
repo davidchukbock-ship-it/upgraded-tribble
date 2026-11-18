@@ -1,62 +1,83 @@
 <?php
 declare(strict_types=1);
-// Receives the request form. Validates, stores a backup, emails the company, appends to Google Sheets.
-$cfgFile = __DIR__ . '/config.php';
-$cfg = is_file($cfgFile) ? require $cfgFile : [];
+// Site request form -> CRM (table contact_requests). Lives in /site/ next to the CRM; uses CRM classes read-only,
+// no CRM file is modified. Encrypted contact, rate limit, history, staff notification S20 – same as the CRM's own form.
+use App\Core\App;
+use App\Core\Crypto;
+use App\Core\Db;
+use App\Services\History;
+use App\Services\NotificationService;
+use App\Services\RequestService;
+
 $wantsJson = str_contains($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json');
+$lang = in_array($_POST['lang'] ?? 'en', ['ru', 'vi', 'es'], true) ? $_POST['lang'] : 'en';
 function done(bool $ok, string $lang, string $err = '', bool $json = true): never {
     if ($json) { header('Content-Type: application/json; charset=utf-8'); echo json_encode(['ok' => $ok, 'error' => $err], JSON_UNESCAPED_UNICODE); exit; }
-    header('Location: ' . ($lang === 'ru' ? '/ru/' : ($lang === 'vi' ? '/vi/' : ($lang === 'es' ? '/es/' : '/'))) . 'contact/?sent=' . ($ok ? '1' : '0')); exit;
+    $base = '/site' . ($lang === 'en' ? '' : '/' . $lang);
+    header('Location: ' . $base . '/contact/?sent=' . ($ok ? '1' : '0')); exit;
 }
 if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') { http_response_code(405); exit; }
-$g = static fn(string $k, int $n = 200): string => mb_substr(trim(preg_replace('/[\r\n\t]+/', ' ', (string)($_POST[$k] ?? ''))), 0, $n);
-$lang = in_array($_POST['lang'] ?? 'en', ['ru','vi','es'], true) ? $_POST['lang'] : 'en';
-$esm = ['Please wait a moment and send again.'=>'Espere un momento y vuelva a enviar.','Please confirm consent.'=>'Confirme su consentimiento.','Please fill in all required fields.'=>'Complete todos los campos obligatorios.','Enter a valid email or phone.'=>'Introduzca un correo o teléfono válido.','Too many requests. Try again later.'=>'Demasiadas solicitudes. Inténtelo más tarde.','Could not send. Please write to us by email.'=>'No se pudo enviar. Escríbanos por correo electrónico.'];
-$msg = static fn(string $en, string $ru, string $vi = ''): string => $lang === 'ru' ? $ru : ($lang === 'vi' && $vi !== '' ? $vi : ($lang === 'es' ? ($esm[$en] ?? $en) : $en));
+header('Cache-Control: no-store');
+$M = [
+    'wait'    => ['Please wait a moment and send again.', 'Подождите секунду и отправьте ещё раз.', 'Vui lòng đợi một chút rồi gửi lại.', 'Espere un momento y vuelva a enviar.'],
+    'consent' => ['Please confirm consent.', 'Подтвердите согласие.', 'Vui lòng xác nhận đồng ý.', 'Confirme su consentimiento.'],
+    'fields'  => ['Please fill in all required fields.', 'Заполните все обязательные поля.', 'Vui lòng điền đầy đủ các trường bắt buộc.', 'Complete todos los campos obligatorios.'],
+    'contact' => ['Enter a valid email or phone.', 'Укажите корректный email или телефон.', 'Vui lòng nhập email hoặc số điện thoại hợp lệ.', 'Introduzca un correo o teléfono válido.'],
+    'rate'    => ['Too many requests. Try again later.', 'Слишком много запросов. Попробуйте позже.', 'Quá nhiều yêu cầu. Vui lòng thử lại sau.', 'Demasiadas solicitudes. Inténtelo más tarde.'],
+    'fail'    => ['Could not send. Please try again later.', 'Не удалось отправить. Попробуйте позже.', 'Không gửi được. Vui lòng thử lại sau.', 'No se pudo enviar. Inténtelo más tarde.'],
+];
+$msg = static function (string $k) use ($M, $lang): string { return $M[$k][['en' => 0, 'ru' => 1, 'vi' => 2, 'es' => 3][$lang]]; };
+$g = static fn(string $k, int $n = 200): string => mb_substr(trim(preg_replace('/[\r\n\t]+/', ' ', (string) ($_POST[$k] ?? ''))), 0, $n);
 
-if ($g('website') !== '') done(true, $lang, '', $wantsJson);                 // honeypot: pretend success
-$t = (int)($_POST['t'] ?? 0);
-if ($t > 0 && (time() - intdiv($t, 1000)) < ($cfg['min_seconds'] ?? 3)) done(false, $lang, $msg('Please wait a moment and send again.', 'Подождите секунду и отправьте ещё раз.', 'Vui lòng đợi một chút rồi gửi lại.'), $wantsJson);
-if (empty($_POST['consent'])) done(false, $lang, $msg('Please confirm consent.', 'Подтвердите согласие.', 'Vui lòng xác nhận đồng ý.'), $wantsJson);
+if ($g('website') !== '') done(true, $lang, '', $wantsJson);   // honeypot: pretend success
+if (empty($_POST['consent'])) done(false, $lang, $msg('consent'), $wantsJson);
 
 $d = ['solution' => $g('solution', 60), 'name' => $g('name', 120), 'company' => $g('company', 120), 'region' => $g('region', 120),
-      'team_size' => $g('team_size', 40), 'contact' => $g('contact', 120), 'message' => mb_substr(trim((string)($_POST['message'] ?? '')), 0, 2000),
-      'page' => $g('page', 40), 'lang' => $lang];
-if ($d['solution'] === '' || $d['company'] === '' || $d['region'] === '' || $d['contact'] === '')
-    done(false, $lang, $msg('Please fill in all required fields.', 'Заполните все обязательные поля.', 'Vui lòng điền đầy đủ các trường bắt buộc.'), $wantsJson);
-$isMail = (bool)filter_var($d['contact'], FILTER_VALIDATE_EMAIL);
-if (!$isMail && !preg_match('/^\+?[0-9 ()\-]{7,20}$/', $d['contact']))
-    done(false, $lang, $msg('Enter a valid email or phone.', 'Укажите корректный email или телефон.', 'Vui lòng nhập email hoặc số điện thoại hợp lệ.'), $wantsJson);
+      'team_size' => $g('team_size', 40), 'contact' => $g('contact', 120), 'page' => $g('page', 40),
+      'message' => mb_substr(trim((string) ($_POST['message'] ?? '')), 0, 2000)];
+if ($d['solution'] === '' || $d['company'] === '' || $d['region'] === '' || $d['contact'] === '') done(false, $lang, $msg('fields'), $wantsJson);
+$isMail = (bool) filter_var($d['contact'], FILTER_VALIDATE_EMAIL);
+if (!$isMail && !preg_match('/^\+?[0-9 ()\-]{7,20}$/', $d['contact'])) done(false, $lang, $msg('contact'), $wantsJson);
 
-// storage dir (blocked from web by .htaccess)
-$dir = __DIR__ . '/data'; if (!is_dir($dir)) { @mkdir($dir, 0750, true); @file_put_contents($dir . '/.htaccess', "Require all denied\n"); }
-// rate limit per IP (hashed)
-$ip = hash('sha256', ($_SERVER['REMOTE_ADDR'] ?? '') . 'gcn');
-$rl = $dir . '/rl-' . substr($ip, 0, 16) . '.json'; $now = time();
-$hits = is_file($rl) ? array_filter((array)json_decode((string)file_get_contents($rl), true), static fn($x) => $x > $now - 3600) : [];
-if (count($hits) >= ($cfg['max_per_hour'] ?? 5)) done(false, $lang, $msg('Too many requests. Try again later.', 'Слишком много запросов. Попробуйте позже.', 'Quá nhiều yêu cầu. Vui lòng thử lại sau.'), $wantsJson);
-$hits[] = $now; @file_put_contents($rl, json_encode(array_values($hits)));
+try {
+    require dirname(__DIR__) . '/src/bootstrap.php';
+    App::boot(gcn_load_config());
+    if (!RequestService::checkToken((string) ($_POST['t'] ?? ''))) done(false, $lang, $msg('wait'), $wantsJson);
 
-$d['at'] = gmdate('c');
-// 1) local backup first: a request is never lost
-$ok = @file_put_contents($dir . '/requests.jsonl', json_encode($d, JSON_UNESCAPED_UNICODE) . "\n", FILE_APPEND | LOCK_EX) !== false;
-// 2) email
-$mailed = false;
-if (!empty($cfg['mail_to'])) {
-    $body = "New website request\n\n";
-    foreach ($d as $k => $v) { $body .= str_pad($k, 10) . ': ' . $v . "\n"; }
-    $h = ['From' => ($cfg['mail_from'] ?? $cfg['mail_to']), 'MIME-Version' => '1.0', 'Content-Type' => 'text/plain; charset=UTF-8'];
-    if ($isMail) $h['Reply-To'] = $d['contact'];
-    $mailed = @mail($cfg['mail_to'], '=?UTF-8?B?' . base64_encode('GCN site: ' . $d['solution'] . ' — ' . $d['company']) . '?=', $body, $h);
+    $ip = (string) ($_SERVER['REMOTE_ADDR'] ?? '');
+    $secret = (string) App::cfg('security.data_key', '');
+    $ipHash = hash_hmac('sha256', $ip, $secret);
+    $since = gmdate('Y-m-d H:i:s', time() - 3600);
+    if ((int) Db::val('SELECT COUNT(*) FROM contact_requests WHERE ip_hash = ? AND created_at >= ?', [$ipHash, $since]) >= 5) done(false, $lang, $msg('rate'), $wantsJson);
+
+    $topic = match ($d['solution']) {
+        'Workforce Teams', 'Staffing', 'Outstaffing' => 'COMPANY',
+        'Partner Network' => 'PARTNER',
+        'Inclusive Workforce' => 'CANDIDATE',
+        default => 'OTHER',
+    };
+    $lines = ['Solution: ' . $d['solution'], 'Region: ' . $d['region']];
+    if ($d['team_size'] !== '') $lines[] = 'Team size: ' . $d['team_size'];
+    if (!$isMail) $lines[] = 'Phone given as the contact';
+    $lines[] = 'Form: ' . ($d['page'] !== '' ? $d['page'] : 'site');
+    $text = implode("\n", $lines) . ($d['message'] !== '' ? "\n\n" . $d['message'] : '');
+    $name = $d['name'] !== '' ? $d['name'] : $d['company'];
+    $emailEnc = Crypto::encrypt($d['contact']);
+    $masked = $isMail ? RequestService::maskEmail($d['contact']) : 'tel:***' . substr(preg_replace('/\D/', '', $d['contact']), -2);
+    $now = App::now();
+    $id = Db::tx(function () use ($name, $d, $isMail, $emailEnc, $masked, $topic, $text, $lang, $ipHash, $now) {
+        $id = Db::insert('contact_requests', [
+            'name' => mb_substr($name, 0, 120), 'email_enc' => $emailEnc, 'email_masked' => $masked,
+            'phone_enc' => $isMail ? null : $emailEnc, 'company' => mb_substr($d['company'], 0, 160),
+            'topic' => $topic, 'message' => mb_substr($text, 0, 4000), 'lang' => $lang,
+            'status' => 'NEW', 'consent' => 1, 'ip_hash' => $ipHash, 'created_at' => $now, 'updated_at' => $now,
+        ]);
+        History::add('request', (string) $id, null, 'NEW', null, 'site');
+        NotificationService::staff('S20', ['id' => $id, 'type' => $topic], "S20:request:$id");
+        return $id;
+    });
+} catch (Throwable $e) {
+    error_log('[gcn-site] ' . $e->getMessage());
+    done(false, $lang, $msg('fail'), $wantsJson);
 }
-// 3) Google Sheets via Apps Script web app (formula-injection guarded)
-$sheeted = false;
-if (!empty($cfg['sheet_url']) && function_exists('curl_init')) {
-    $safe = array_map(static fn($v) => is_string($v) && preg_match('/^[=+\-@]/', $v) ? "'" . $v : $v, $d);
-    $ch = curl_init($cfg['sheet_url']);
-    curl_setopt_array($ch, [CURLOPT_POST => true, CURLOPT_RETURNTRANSFER => true, CURLOPT_FOLLOWLOCATION => true, CURLOPT_TIMEOUT => 8,
-        CURLOPT_HTTPHEADER => ['Content-Type: application/json'], CURLOPT_POSTFIELDS => json_encode(['secret' => $cfg['sheet_secret'] ?? '', 'row' => $safe], JSON_UNESCAPED_UNICODE)]);
-    $r = curl_exec($ch); $sheeted = $r !== false && str_contains((string)$r, '"ok":true'); curl_close($ch);
-}
-if (!$ok && !$mailed && !$sheeted) done(false, $lang, $msg('Could not send. Please write to us by email.', 'Не удалось отправить. Напишите нам на почту.', 'Không gửi được. Vui lòng gửi email cho chúng tôi.'), $wantsJson);
 done(true, $lang, '', $wantsJson);
