@@ -6,26 +6,26 @@ $cfg = is_file($cfgFile) ? require $cfgFile : [];
 $wantsJson = str_contains($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json');
 function done(bool $ok, string $lang, string $err = '', bool $json = true): never {
     if ($json) { header('Content-Type: application/json; charset=utf-8'); echo json_encode(['ok' => $ok, 'error' => $err], JSON_UNESCAPED_UNICODE); exit; }
-    header('Location: ' . ($lang === 'ru' ? '/ru/' : '/') . 'contact/?sent=' . ($ok ? '1' : '0')); exit;
+    header('Location: ' . ($lang === 'ru' ? '/ru/' : ($lang === 'vi' ? '/vi/' : '/')) . 'contact/?sent=' . ($ok ? '1' : '0')); exit;
 }
 if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') { http_response_code(405); exit; }
 $g = static fn(string $k, int $n = 200): string => mb_substr(trim(preg_replace('/[\r\n\t]+/', ' ', (string)($_POST[$k] ?? ''))), 0, $n);
-$lang = ($_POST['lang'] ?? 'en') === 'ru' ? 'ru' : 'en';
-$msg = static fn(string $en, string $ru): string => $lang === 'ru' ? $ru : $en;
+$lang = in_array($_POST['lang'] ?? 'en', ['ru','vi'], true) ? $_POST['lang'] : 'en';
+$msg = static fn(string $en, string $ru, string $vi = ''): string => $lang === 'ru' ? $ru : ($lang === 'vi' && $vi !== '' ? $vi : $en);
 
 if ($g('website') !== '') done(true, $lang, '', $wantsJson);                 // honeypot: pretend success
 $t = (int)($_POST['t'] ?? 0);
-if ($t > 0 && (time() - intdiv($t, 1000)) < ($cfg['min_seconds'] ?? 3)) done(false, $lang, $msg('Please wait a moment and send again.', 'Подождите секунду и отправьте ещё раз.'), $wantsJson);
-if (empty($_POST['consent'])) done(false, $lang, $msg('Please confirm consent.', 'Подтвердите согласие.'), $wantsJson);
+if ($t > 0 && (time() - intdiv($t, 1000)) < ($cfg['min_seconds'] ?? 3)) done(false, $lang, $msg('Please wait a moment and send again.', 'Подождите секунду и отправьте ещё раз.', 'Vui lòng đợi một chút rồi gửi lại.'), $wantsJson);
+if (empty($_POST['consent'])) done(false, $lang, $msg('Please confirm consent.', 'Подтвердите согласие.', 'Vui lòng xác nhận đồng ý.'), $wantsJson);
 
 $d = ['solution' => $g('solution', 60), 'name' => $g('name', 120), 'company' => $g('company', 120), 'region' => $g('region', 120),
       'team_size' => $g('team_size', 40), 'contact' => $g('contact', 120), 'message' => mb_substr(trim((string)($_POST['message'] ?? '')), 0, 2000),
       'page' => $g('page', 40), 'lang' => $lang];
 if ($d['solution'] === '' || $d['company'] === '' || $d['region'] === '' || $d['contact'] === '')
-    done(false, $lang, $msg('Please fill in all required fields.', 'Заполните все обязательные поля.'), $wantsJson);
+    done(false, $lang, $msg('Please fill in all required fields.', 'Заполните все обязательные поля.', 'Vui lòng điền đầy đủ các trường bắt buộc.'), $wantsJson);
 $isMail = (bool)filter_var($d['contact'], FILTER_VALIDATE_EMAIL);
 if (!$isMail && !preg_match('/^\+?[0-9 ()\-]{7,20}$/', $d['contact']))
-    done(false, $lang, $msg('Enter a valid email or phone.', 'Укажите корректный email или телефон.'), $wantsJson);
+    done(false, $lang, $msg('Enter a valid email or phone.', 'Укажите корректный email или телефон.', 'Vui lòng nhập email hoặc số điện thoại hợp lệ.'), $wantsJson);
 
 // storage dir (blocked from web by .htaccess)
 $dir = __DIR__ . '/data'; if (!is_dir($dir)) { @mkdir($dir, 0750, true); @file_put_contents($dir . '/.htaccess', "Require all denied\n"); }
@@ -33,7 +33,7 @@ $dir = __DIR__ . '/data'; if (!is_dir($dir)) { @mkdir($dir, 0750, true); @file_p
 $ip = hash('sha256', ($_SERVER['REMOTE_ADDR'] ?? '') . 'gcn');
 $rl = $dir . '/rl-' . substr($ip, 0, 16) . '.json'; $now = time();
 $hits = is_file($rl) ? array_filter((array)json_decode((string)file_get_contents($rl), true), static fn($x) => $x > $now - 3600) : [];
-if (count($hits) >= ($cfg['max_per_hour'] ?? 5)) done(false, $lang, $msg('Too many requests. Try again later.', 'Слишком много запросов. Попробуйте позже.'), $wantsJson);
+if (count($hits) >= ($cfg['max_per_hour'] ?? 5)) done(false, $lang, $msg('Too many requests. Try again later.', 'Слишком много запросов. Попробуйте позже.', 'Quá nhiều yêu cầu. Vui lòng thử lại sau.'), $wantsJson);
 $hits[] = $now; @file_put_contents($rl, json_encode(array_values($hits)));
 
 $d['at'] = gmdate('c');
@@ -57,5 +57,5 @@ if (!empty($cfg['sheet_url']) && function_exists('curl_init')) {
         CURLOPT_HTTPHEADER => ['Content-Type: application/json'], CURLOPT_POSTFIELDS => json_encode(['secret' => $cfg['sheet_secret'] ?? '', 'row' => $safe], JSON_UNESCAPED_UNICODE)]);
     $r = curl_exec($ch); $sheeted = $r !== false && str_contains((string)$r, '"ok":true'); curl_close($ch);
 }
-if (!$ok && !$mailed && !$sheeted) done(false, $lang, $msg('Could not send. Please write to us by email.', 'Не удалось отправить. Напишите нам на почту.'), $wantsJson);
+if (!$ok && !$mailed && !$sheeted) done(false, $lang, $msg('Could not send. Please write to us by email.', 'Не удалось отправить. Напишите нам на почту.', 'Không gửi được. Vui lòng gửi email cho chúng tôi.'), $wantsJson);
 done(true, $lang, '', $wantsJson);

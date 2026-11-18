@@ -41,10 +41,10 @@ header.site .wrap{display:flex;align-items:center;gap:28px;height:72px}
 .brand i{display:block;width:1px;height:26px;background:var(--line-2)}
 .brand span{font:400 19px/1 var(--sans);color:var(--graphite);letter-spacing:.01em}
 nav.main{margin-left:auto}
-nav.main ul{display:flex;gap:26px;list-style:none;margin:0;padding:0}
-nav.main a{font-size:14.5px;color:var(--graphite);text-decoration:none;padding:8px 0;border-bottom:1px solid transparent}
+nav.main ul{display:flex;gap:22px;list-style:none;margin:0;padding:0}
+nav.main a{white-space:nowrap;font-size:14.5px;color:var(--graphite);text-decoration:none;padding:8px 0;border-bottom:1px solid transparent}
 nav.main a:hover,nav.main a[aria-current]{color:var(--navy);border-bottom-color:var(--navy)}
-.btn{display:inline-flex;align-items:center;gap:10px;font:500 14.5px/1 var(--sans);padding:14px 22px;border-radius:2px;text-decoration:none;border:1px solid var(--navy);background:var(--navy);color:#fff;cursor:pointer;transition:background .15s}
+.btn{white-space:nowrap;display:inline-flex;align-items:center;gap:10px;font:500 14.5px/1 var(--sans);padding:14px 22px;border-radius:2px;text-decoration:none;border:1px solid var(--navy);background:var(--navy);color:#fff;cursor:pointer;transition:background .15s}
 .btn:hover{background:var(--navy-2)}
 .btn.ghost{background:transparent;color:var(--navy)}
 .btn.ghost:hover{background:var(--tint)}
@@ -158,7 +158,7 @@ footer.site .legal{margin-top:40px;padding-top:20px;border-top:1px solid rgba(25
 .page-head{padding:clamp(44px,6vw,80px) 0 clamp(36px,5vw,60px)}
 .page-head h1{max-width:16em;margin-bottom:18px}
 
-@media (max-width:1060px){
+@media (max-width:1180px){
   nav.main{display:none;position:absolute;left:0;right:0;top:100%;background:#fff;border-bottom:1px solid var(--line);padding:10px var(--gap) 22px}
   nav.main.open{display:block}
   nav.main ul{flex-direction:column;gap:2px}
