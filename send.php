@@ -32,12 +32,19 @@ $g = static fn(string $k, int $n = 200): string => mb_substr(trim(preg_replace('
 if ($g('website') !== '') done(true, $lang, '', $wantsJson);   // honeypot: pretend success
 if (empty($_POST['consent'])) done(false, $lang, $msg('consent'), $wantsJson);
 
+$sub = ($_POST['kind'] ?? '') === 'subscribe';
+if ($sub) {
+    $d = ['solution' => 'Newsletter', 'name' => '', 'company' => '', 'region' => '', 'team_size' => '', 'contact' => $g('email', 120), 'page' => $g('page', 40), 'message' => ''];
+    if (!filter_var($d['contact'], FILTER_VALIDATE_EMAIL)) done(false, $lang, $msg('contact'), $wantsJson);
+    $isMail = true;
+} else {
 $d = ['solution' => $g('solution', 60), 'name' => $g('name', 120), 'company' => $g('company', 120), 'region' => $g('region', 120),
       'team_size' => $g('team_size', 40), 'contact' => $g('contact', 120), 'page' => $g('page', 40),
       'message' => mb_substr(trim((string) ($_POST['message'] ?? '')), 0, 2000)];
 if ($d['solution'] === '' || $d['company'] === '' || $d['region'] === '' || $d['contact'] === '') done(false, $lang, $msg('fields'), $wantsJson);
 $isMail = (bool) filter_var($d['contact'], FILTER_VALIDATE_EMAIL);
 if (!$isMail && !preg_match('/^\+?[0-9 ()\-]{7,20}$/', $d['contact'])) done(false, $lang, $msg('contact'), $wantsJson);
+}
 
 try {
     require dirname(__DIR__) . '/src/bootstrap.php';
@@ -50,30 +57,35 @@ try {
     $since = gmdate('Y-m-d H:i:s', time() - 3600);
     if ((int) Db::val('SELECT COUNT(*) FROM contact_requests WHERE ip_hash = ? AND created_at >= ?', [$ipHash, $since]) >= 5) done(false, $lang, $msg('rate'), $wantsJson);
 
-    $topic = match ($d['solution']) {
+    $topic = $sub ? 'OTHER' : match ($d['solution']) {
         'Workforce Teams', 'Staffing', 'Outstaffing' => 'COMPANY',
         'Partner Network' => 'PARTNER',
         'Inclusive Workforce' => 'CANDIDATE',
         default => 'OTHER',
     };
-    $lines = ['Solution: ' . $d['solution'], 'Region: ' . $d['region']];
-    if ($d['team_size'] !== '') $lines[] = 'Team size: ' . $d['team_size'];
-    if (!$isMail) $lines[] = 'Phone given as the contact';
-    $lines[] = 'Form: ' . ($d['page'] !== '' ? $d['page'] : 'site');
-    $text = implode("\n", $lines) . ($d['message'] !== '' ? "\n\n" . $d['message'] : '');
-    $name = $d['name'] !== '' ? $d['name'] : $d['company'];
+    if ($sub) {
+        $text = "Newsletter subscription (Partner Network)\nForm: " . ($d['page'] !== '' ? $d['page'] : 'site');
+        $name = 'Subscriber';
+    } else {
+        $lines = ['Solution: ' . $d['solution'], 'Region: ' . $d['region']];
+        if ($d['team_size'] !== '') $lines[] = 'Team size: ' . $d['team_size'];
+        if (!$isMail) $lines[] = 'Phone given as the contact';
+        $lines[] = 'Form: ' . ($d['page'] !== '' ? $d['page'] : 'site');
+        $text = implode("\n", $lines) . ($d['message'] !== '' ? "\n\n" . $d['message'] : '');
+        $name = $d['name'] !== '' ? $d['name'] : $d['company'];
+    }
     $emailEnc = Crypto::encrypt($d['contact']);
     $masked = $isMail ? RequestService::maskEmail($d['contact']) : 'tel:***' . substr(preg_replace('/\D/', '', $d['contact']), -2);
     $now = App::now();
-    $id = Db::tx(function () use ($name, $d, $isMail, $emailEnc, $masked, $topic, $text, $lang, $ipHash, $now) {
+    $id = Db::tx(function () use ($name, $d, $isMail, $emailEnc, $masked, $topic, $text, $lang, $ipHash, $now, $sub) {
         $id = Db::insert('contact_requests', [
             'name' => mb_substr($name, 0, 120), 'email_enc' => $emailEnc, 'email_masked' => $masked,
-            'phone_enc' => $isMail ? null : $emailEnc, 'company' => mb_substr($d['company'], 0, 160),
+            'phone_enc' => $isMail ? null : $emailEnc, 'company' => $d['company'] !== '' ? mb_substr($d['company'], 0, 160) : null,
             'topic' => $topic, 'message' => mb_substr($text, 0, 4000), 'lang' => $lang,
-            'status' => 'NEW', 'consent' => 1, 'ip_hash' => $ipHash, 'created_at' => $now, 'updated_at' => $now,
+            'status' => $sub ? 'DONE' : 'NEW', 'source' => $sub ? 'news' : 'site', 'consent' => 1, 'ip_hash' => $ipHash, 'created_at' => $now, 'updated_at' => $now,
         ]);
-        History::add('request', (string) $id, null, 'NEW', null, 'site');
-        NotificationService::staff('S20', ['id' => $id, 'type' => $topic], "S20:request:$id");
+        History::add('request', (string) $id, null, $sub ? 'DONE' : 'NEW', null, 'site');
+        if (!$sub) NotificationService::staff('S20', ['id' => $id, 'type' => $topic], "S20:request:$id");
         return $id;
     });
 } catch (Throwable $e) {
