@@ -1,7 +1,7 @@
 /* GCN Workforce — Japanese corporate minimalism. No webfonts, no frameworks. */
 :root{
   --navy:#14264a; --navy-2:#1d3566; --graphite:#2e3338; --ink:#1b2330; --muted:#586272; --line:#dfe4ea; --line-2:#cdd4dd;
-  --tint:#f4f6f9; --paper:#fff; --plum:#6b2c8c; --green:#2f6f4e;
+  --tint:#eef2f7; --paper:#fff; --plum:#6b2c8c; --green:#2f6f4e;
   --serif:"Source Serif 4","Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,"Times New Roman",serif;
   --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
   --w:1180px; --gap:clamp(20px,4vw,48px);
@@ -25,6 +25,7 @@ p{margin:0 0 1em}
 .muted{color:var(--muted)}
 .eyebrow{font:500 12px/1.4 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0 0 18px}
 .eyebrow b{color:var(--navy);font-weight:600;margin-right:.6em}
+.eyebrow b::after{content:"\2014";margin-left:.7em;font-weight:400;color:var(--muted)}
 .eyebrow.plum,.eyebrow.plum b{color:var(--plum)}
 
 /* header */
@@ -79,8 +80,8 @@ section.s.tint{background:var(--tint)}
 .cols.four{grid-template-columns:repeat(4,minmax(0,1fr))}
 .head p.lead{margin-top:18px}
 .steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(4,1fr);gap:28px}
-.steps li{border-top:1px solid var(--navy);padding-top:16px}
-.steps small{display:block;font:500 13px/1 var(--serif);color:var(--muted);margin-bottom:12px}
+.steps li{padding-top:4px}
+.steps small{display:block;font:400 22px/1 var(--serif);color:var(--navy);margin-bottom:12px}
 .steps h3{margin-bottom:8px;font-size:18px}
 .steps p{font-size:14.5px;color:var(--muted);margin:0}
 .formats{display:flex;flex-wrap:wrap;gap:12px 28px;margin-top:34px;padding-top:20px;border-top:1px solid var(--line);font-size:14px}
@@ -94,7 +95,10 @@ section.s.tint{background:var(--tint)}
 .photo.wide{aspect-ratio:16/9}
 .photo.is-empty::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(135deg,transparent 0 22px,rgba(20,38,74,.045) 22px 23px)}
 .photo.is-empty::after{content:attr(data-label);position:absolute;left:14px;bottom:12px;font-size:12px;letter-spacing:.06em;color:#6b7788}
-.industries{display:grid;grid-template-columns:repeat(4,1fr);gap:18px 18px}
+.industries{display:grid;grid-template-columns:repeat(12,1fr);gap:22px 18px}
+.industries figure{grid-column:span 3}
+.industries figure:nth-child(n+5){grid-column:span 4}
+.industries figure:nth-child(n+5) .photo{aspect-ratio:3/2}
 .industries figure{margin:0}
 .industries .photo{aspect-ratio:4/3}
 .industries figcaption{font-size:14px;margin-top:10px;color:var(--graphite);line-height:1.35}
@@ -177,6 +181,9 @@ footer.site .legal{margin-top:40px;padding-top:20px;border-top:1px solid rgba(25
   header.site .wrap{height:64px}
   .steps,.cols.four,.pills{grid-template-columns:repeat(2,1fr)}
   .industries{grid-template-columns:repeat(2,1fr)}
+  .industries figure,.industries figure:nth-child(n+5){grid-column:auto}
+  .industries figure:nth-child(n+5) .photo{aspect-ratio:4/3}
+  .partners-row,.inc-row{grid-template-columns:1fr}
   footer.site .grid{grid-template-columns:repeat(3,1fr)}
   footer.site .jobs{grid-column:1/-1;border-left:0;padding-left:0}
   form.req .row{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -276,3 +283,13 @@ nav.main li.dd>a{font-weight:600}}
 .person span{font-size:14px;color:var(--muted)}
 .photo.portrait.is-empty::after{content:"";}
 @media (max-width:980px){.people{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* home: partners row, inclusive row, headings with icons */
+.partners-row{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,8fr) auto;gap:var(--gap);align-items:center}
+.partners-row .pills{border-top:0}
+.partners-row .pbtn{margin:0}
+.inc-row{display:grid;grid-template-columns:minmax(0,4fr) minmax(0,5fr) minmax(0,3.6fr);gap:var(--gap);align-items:center}
+h3.ih{display:flex;align-items:center;gap:10px;font-size:18px;margin-bottom:6px}
+h3.ih svg{width:20px;height:20px;stroke:var(--navy);fill:none;stroke-width:1.5;flex:none}
+@media (max-width:1180px){.partners-row .pills{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:760px){.partners-row .pills{grid-template-columns:1fr}}
