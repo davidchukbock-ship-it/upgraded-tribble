@@ -6,12 +6,13 @@ $cfg = is_file($cfgFile) ? require $cfgFile : [];
 $wantsJson = str_contains($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json');
 function done(bool $ok, string $lang, string $err = '', bool $json = true): never {
     if ($json) { header('Content-Type: application/json; charset=utf-8'); echo json_encode(['ok' => $ok, 'error' => $err], JSON_UNESCAPED_UNICODE); exit; }
-    header('Location: ' . ($lang === 'ru' ? '/ru/' : ($lang === 'vi' ? '/vi/' : '/')) . 'contact/?sent=' . ($ok ? '1' : '0')); exit;
+    header('Location: ' . ($lang === 'ru' ? '/ru/' : ($lang === 'vi' ? '/vi/' : ($lang === 'es' ? '/es/' : '/'))) . 'contact/?sent=' . ($ok ? '1' : '0')); exit;
 }
 if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') { http_response_code(405); exit; }
 $g = static fn(string $k, int $n = 200): string => mb_substr(trim(preg_replace('/[\r\n\t]+/', ' ', (string)($_POST[$k] ?? ''))), 0, $n);
-$lang = in_array($_POST['lang'] ?? 'en', ['ru','vi'], true) ? $_POST['lang'] : 'en';
-$msg = static fn(string $en, string $ru, string $vi = ''): string => $lang === 'ru' ? $ru : ($lang === 'vi' && $vi !== '' ? $vi : $en);
+$lang = in_array($_POST['lang'] ?? 'en', ['ru','vi','es'], true) ? $_POST['lang'] : 'en';
+$esm = ['Please wait a moment and send again.'=>'Espere un momento y vuelva a enviar.','Please confirm consent.'=>'Confirme su consentimiento.','Please fill in all required fields.'=>'Complete todos los campos obligatorios.','Enter a valid email or phone.'=>'Introduzca un correo o teléfono válido.','Too many requests. Try again later.'=>'Demasiadas solicitudes. Inténtelo más tarde.','Could not send. Please write to us by email.'=>'No se pudo enviar. Escríbanos por correo electrónico.'];
+$msg = static fn(string $en, string $ru, string $vi = ''): string => $lang === 'ru' ? $ru : ($lang === 'vi' && $vi !== '' ? $vi : ($lang === 'es' ? ($esm[$en] ?? $en) : $en));
 
 if ($g('website') !== '') done(true, $lang, '', $wantsJson);                 // honeypot: pretend success
 $t = (int)($_POST['t'] ?? 0);

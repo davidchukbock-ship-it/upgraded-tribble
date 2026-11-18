@@ -35,13 +35,13 @@ p{margin:0 0 1em}
 .top .lang a[aria-current]{font-weight:600;color:var(--navy)}
 .top .lang span{margin:0 6px;color:var(--line-2)}
 header.site{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.96);backdrop-filter:saturate(1.2) blur(8px);border-bottom:1px solid var(--line)}
-header.site .wrap{display:flex;align-items:center;gap:28px;height:72px}
+header.site .wrap{display:flex;align-items:center;gap:22px;height:72px}
 .brand{display:flex;align-items:center;gap:14px;text-decoration:none;color:var(--navy);flex:none}
 .brand b{font:500 30px/1 var(--serif);letter-spacing:.01em}
 .brand i{display:block;width:1px;height:26px;background:var(--line-2)}
 .brand span{font:400 19px/1 var(--sans);color:var(--graphite);letter-spacing:.01em}
 nav.main{margin-left:auto}
-nav.main ul{display:flex;gap:22px;list-style:none;margin:0;padding:0}
+nav.main ul{display:flex;gap:18px;list-style:none;margin:0;padding:0}
 nav.main a{white-space:nowrap;font-size:14.5px;color:var(--graphite);text-decoration:none;padding:8px 0;border-bottom:1px solid transparent}
 nav.main a:hover,nav.main a[aria-current]{color:var(--navy);border-bottom-color:var(--navy)}
 .btn{white-space:nowrap;display:inline-flex;align-items:center;gap:10px;font:500 14.5px/1 var(--sans);padding:14px 22px;border-radius:2px;text-decoration:none;border:1px solid var(--navy);background:var(--navy);color:#fff;cursor:pointer;transition:background .15s}
