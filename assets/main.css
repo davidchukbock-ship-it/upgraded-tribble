@@ -325,3 +325,5 @@ section.s{padding:clamp(34px,3.6vw,54px) 0}
 #teams .cols.two,#industries .cols.two,#staffing .cols.two{grid-template-columns:minmax(0,3.3fr) minmax(0,8.7fr)}
 #teams .head p.lead,#industries .head p.lead,#staffing .head p.lead{font-size:15px}
 @media (max-width:1180px){#teams .cols.two,#industries .cols.two,#staffing .cols.two{grid-template-columns:1fr}}
+.tag{white-space:nowrap;flex:none}
+#approach .lead{font-size:15px}
