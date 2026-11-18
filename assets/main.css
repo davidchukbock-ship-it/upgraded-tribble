@@ -1,6 +1,6 @@
 /* GCN Workforce — Japanese corporate minimalism. No webfonts, no frameworks. */
 :root{
-  --navy:#14264a; --navy-2:#1d3566; --graphite:#2e3338; --ink:#1b2330; --muted:#586272; --line:#dfe4ea; --line-2:#cdd4dd;
+  --navy:#292348; --navy-2:#3b3366; --graphite:#2e3338; --ink:#1b2330; --muted:#586272; --line:#dfe4ea; --line-2:#cdd4dd;
   --tint:#eef2f7; --paper:#fff; --plum:#6b2c8c; --green:#2f6f4e;
   --serif:"Source Serif 4","Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,"Times New Roman",serif;
   --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
@@ -93,7 +93,7 @@ section.s.tint{background:var(--tint)}
 .photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .photo.tall{aspect-ratio:5/4}
 .photo.wide{aspect-ratio:16/9}
-.photo.is-empty::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(135deg,transparent 0 22px,rgba(20,38,74,.045) 22px 23px)}
+.photo.is-empty::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(135deg,transparent 0 22px,rgba(41,35,72,.045) 22px 23px)}
 .photo.is-empty::after{content:attr(data-label);position:absolute;left:14px;bottom:12px;font-size:12px;letter-spacing:.06em;color:#6b7788}
 .industries{display:grid;grid-template-columns:repeat(12,1fr);gap:22px 18px}
 .industries figure{grid-column:span 3}
@@ -222,11 +222,11 @@ footer.site .legal{margin-top:40px;padding-top:20px;border-top:1px solid rgba(25
 .stick{display:none}
 @media (max-width:760px){
   .trust .wrap{grid-template-columns:1fr;gap:16px}
-  .stick{display:flex;position:fixed;left:12px;right:12px;bottom:12px;z-index:30;justify-content:center;box-shadow:0 4px 18px rgba(20,38,74,.25)}
+  .stick{display:flex;position:fixed;left:12px;right:12px;bottom:12px;z-index:30;justify-content:center;box-shadow:0 4px 18px rgba(41,35,72,.25)}
   body{padding-bottom:72px}
 }
 
-.cc{position:fixed;left:16px;right:16px;bottom:16px;z-index:40;max-width:720px;margin:0 auto;background:#fff;border:1px solid var(--line-2);box-shadow:0 8px 30px rgba(20,38,74,.18);padding:16px 18px;display:flex;gap:16px;align-items:center;justify-content:space-between;border-radius:2px;font-size:14px}
+.cc{position:fixed;left:16px;right:16px;bottom:16px;z-index:40;max-width:720px;margin:0 auto;background:#fff;border:1px solid var(--line-2);box-shadow:0 8px 30px rgba(41,35,72,.18);padding:16px 18px;display:flex;gap:16px;align-items:center;justify-content:space-between;border-radius:2px;font-size:14px}
 .cc[hidden]{display:none}
 .cc p{margin:0;color:var(--graphite)}
 .cc div{display:flex;gap:8px;flex:none}
@@ -253,7 +253,7 @@ footer.site .legal{margin-top:40px;padding-top:20px;border-top:1px solid rgba(25
 @media (max-width:1180px){.steps.six{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:760px){.steps.six{grid-template-columns:1fr}.gloss{grid-template-columns:1fr}}
 nav.main li.dd{position:relative}
-nav.main .sub{display:none;position:absolute;left:-16px;top:100%;min-width:250px;background:#fff;border:1px solid var(--line);box-shadow:0 10px 28px rgba(20,38,74,.08);padding:8px 0;margin:0;z-index:30;flex-direction:column;gap:0}
+nav.main .sub{display:none;position:absolute;left:-16px;top:100%;min-width:250px;background:#fff;border:1px solid var(--line);box-shadow:0 10px 28px rgba(41,35,72,.08);padding:8px 0;margin:0;z-index:30;flex-direction:column;gap:0}
 nav.main li.dd:hover>.sub,nav.main li.dd:focus-within>.sub{display:flex}
 nav.main .sub a{display:block;padding:9px 18px;border-bottom:0;white-space:normal;font-size:14px}
 nav.main .sub a:hover{background:var(--tint)}
