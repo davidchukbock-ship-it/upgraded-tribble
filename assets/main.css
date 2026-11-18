@@ -249,3 +249,10 @@ nav.main .sub a{padding:9px 0;border-bottom:1px solid var(--line);color:var(--mu
 nav.main li.dd>a{font-weight:600}}
 @media (max-width:980px){.stubs{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:640px){.stubs{grid-template-columns:1fr}}
+.itemlist{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0 36px}
+.itemlist li{padding:16px 0;border-top:1px solid var(--line)}
+.itemlist a{font:500 18px/1.35 var(--serif);color:var(--navy);text-decoration:none}
+.itemlist a:hover{text-decoration:underline}
+.itemlist p{margin:6px 0 0;font-size:14px;color:var(--muted)}
+@media (max-width:980px){.itemlist{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:640px){.itemlist{grid-template-columns:1fr}}
