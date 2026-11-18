@@ -20,7 +20,7 @@
       fetch(f.action,{method:'POST',body:new FormData(f),headers:{'Accept':'application/json'}})
         .then(function(r){return r.json().catch(function(){return {ok:false};});})
         .then(function(j){
-          if(j&&j.ok){s.className='status ok';s.textContent=f.dataset.ok;f.reset();if(t){t.value=String(Date.now());}}
+          if(j&&j.ok){d.dispatchEvent(new CustomEvent('gcn:lead'));s.className='status ok';s.textContent=f.dataset.ok;f.reset();if(t){t.value=String(Date.now());}}
           else{s.className='status err';s.textContent=(j&&j.error)||f.dataset.err;}
         })
         .catch(function(){s.className='status err';s.textContent=f.dataset.err;})
